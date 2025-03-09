@@ -30,7 +30,8 @@ public class SecurityConfig {
                         authorize ->
                                 authorize
                                         .requestMatchers("/ws")
-                                        .permitAll());
+                                        .permitAll()
+                );
 
         return http.build();
     }
