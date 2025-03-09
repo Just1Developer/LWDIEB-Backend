@@ -1,6 +1,8 @@
+/* (C)2025 */
 package net.justonedev.lwdiebbackend.configuration;
 
 import net.justonedev.lwdiebbackend.websockets.SocketSessionHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketSession;
@@ -14,37 +16,39 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This class configures WebSocket support for the application.
- * Registers a WebSocket handler and manages a socket session handler.
+ * This class configures WebSocket support for the application. Registers a
+ * WebSocket handler and manages a socket session handler.
  */
 @Configuration
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
+	@Value("dashboard.variable.frontend-url")
+	private String frontendUrl;
 
-    private final Map<UUID, Set<WebSocketSession>> userSockets = new ConcurrentHashMap<>();
+	private final Map<UUID, Set<WebSocketSession>> userSockets = new ConcurrentHashMap<>();
 
-    /**
-     * Creates a handler to manage WebSocket sessions.
-     *
-     * @return the {@link SocketSessionHandler} instance
-     */
-    @Bean
-    public SocketSessionHandler socketSessionHandler() {
-        return new SocketSessionHandler(userSockets);
-    }
+	/**
+	 * Creates a handler to manage WebSocket sessions.
+	 *
+	 * @return the {@link SocketSessionHandler} instance
+	 */
+	@Bean
+	public SocketSessionHandler socketSessionHandler() {
+		return new SocketSessionHandler(userSockets);
+	}
 
-    /**
-     * Registers WebSocket handlers and defines allowed origins:
-     * <ul>
-     *     <li><a href="http://localhost:3000">...</a></li>
-     *     <li><a href="http://localhost>...</a></li>
-     *     <li><a href="https://localhost:3000">...</a></li>
-     * </ul>
-     *
-     * @param registry the {@link WebSocketHandlerRegistry} to configure
-     */
-    @Override
-    public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(socketSessionHandler(), "/ws").setAllowedOrigins("*");
-    }
+	/**
+	 * Registers WebSocket handlers and defines allowed origins:
+	 * <ul>
+	 * <li><a href="http://localhost:3000">...</a></li>
+	 * <li><a href="http://localhost>...</a></li>
+	 * <li><a href="https://localhost:3000">...</a></li>
+	 * </ul>
+	 *
+	 * @param registry the {@link WebSocketHandlerRegistry} to configure
+	 */
+	@Override
+	public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
+		registry.addHandler(socketSessionHandler(), "/ws").setAllowedOrigins(frontendUrl);
+	}
 }
