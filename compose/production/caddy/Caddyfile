@@ -1,0 +1,21 @@
+:80 {
+	log {
+		format console
+	}
+
+
+	@frontend_routes path_regexp ^/(api/auth/(login-valid|refresh|callback|logout))$
+	reverse_proxy @frontend_routes pse-next:3000
+
+	@backend_routes path_regexp ^/(auth/(login/(google|kit)|callback|logout|refresh)$)|(api/)
+    reverse_proxy @backend_routes pse-backend:8080
+
+	reverse_proxy /ws pse-backend:8080
+
+	@keycloak_routes path_regexp ^/(realms/kit-dashboard|auth/)
+	reverse_proxy @keycloak_routes pse-keycloak:8080 {
+	    header_up Host localhost
+	}
+
+	reverse_proxy * pse-next:3000
+}

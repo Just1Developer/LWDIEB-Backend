@@ -1,5 +1,8 @@
 HELP.md
 .gradle
+*.env
+.env
+secret.properties
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
@@ -35,3 +38,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Tree ###
+git_tree.*

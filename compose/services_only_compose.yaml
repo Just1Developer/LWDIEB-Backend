@@ -1,0 +1,45 @@
+# DO NOT MOVE THIS FILE
+services:
+  database:
+    container_name: pse-database
+    image: "postgres:latest"
+    environment:
+      POSTGRES_DB: spring_oauth2
+      POSTGRES_HOST_AUTH_METHOD: trust
+    networks:
+      - dashboard-network
+
+  keycloak:
+    container_name: pse-keycloak
+    image: keycloak/keycloak:25.0.1
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ./production/keycloak/realm/:/opt/keycloak/data/import/
+    env_file: ./production/keycloak/.env
+    environment:
+      - TZ=Europe/Berlin
+    ports:
+      - "8081:8080"
+    cap_drop: [ALL]
+    networks:
+      - dashboard-network
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./development/caddy/data:/data
+      - ./development/caddy/config:/config
+      - ./development/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - dashboard-network
+
+networks:
+  dashboard-network:
+    driver: bridge

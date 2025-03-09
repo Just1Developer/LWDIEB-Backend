@@ -1,0 +1,22 @@
+# This file refers to host.docker.internal do allow redirects to non-docker-hosted front- and backend instances, for development purposes
+:80 {
+	log {
+		format console
+	}
+
+
+	@frontend_routes path_regexp ^/(api/auth/(login-valid|refresh|callback|logout))$
+	reverse_proxy @frontend_routes host.docker.internal:3000
+
+	@backend_routes path_regexp ^/(auth/(login/(google|kit)|callback|logout|refresh)$)|(api/)
+	reverse_proxy @backend_routes host.docker.internal:8080
+
+	reverse_proxy /ws host.docker.internal:8080
+
+	@keycloak_routes path_regexp ^/(realms/kit-dashboard|auth/)
+	reverse_proxy @keycloak_routes pse-keycloak:8080 {
+	    header_up Host localhost
+	}
+
+	reverse_proxy * host.docker.internal:3000
+}

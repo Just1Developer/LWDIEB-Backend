@@ -1,0 +1,78 @@
+services:
+  next:
+    container_name: pse-next
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        SPRING_SERVER_URL: ${SPRING_SERVER_URL}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+    depends_on:
+      - spring
+    ports:
+      - "3000:3000"
+    networks:
+      - dashboard-network
+
+  spring:
+    container_name: pse-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/compose/production/spring/secret.properties:/app/secret.properties
+      - ./backend/compose/production/spring/variable.properties:/app/variable.properties
+    working_dir: /app
+    ports:
+      - "8080:8080"
+    networks:
+      - dashboard-network
+    depends_on:
+      - database
+      - caddy
+
+  database:
+    container_name: pse-database
+    image: "postgres:latest"
+    environment:
+      POSTGRES_DB: spring_oauth2
+      POSTGRES_HOST_AUTH_METHOD: trust
+    networks:
+      - dashboard-network
+
+  keycloak:
+    container_name: pse-keycloak
+    image: keycloak/keycloak:25.0.1
+    command:
+      - start-dev
+      - --import-realm
+    volumes:
+      - ./backend/compose/development/keycloak/realm/:/opt/keycloak/data/import/
+    env_file:
+      - ./backend/compose/production/keycloak/.env
+      - ./backend/compose/development/keycloak/.env # Key / Certificate
+    environment:
+      - TZ=Europe/Berlin
+    ports:
+      - "8081:8080"
+    cap_drop: [ALL]
+    networks:
+      - dashboard-network
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./backend/compose/development/caddy/data:/data
+      - ./backend/compose/development/caddy/config:/config
+      - ./backend/compose/development/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - dashboard-network
+
+networks:
+  dashboard-network:
+    driver: bridge

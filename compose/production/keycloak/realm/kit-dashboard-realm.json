@@ -1,0 +1,103 @@
+{
+  "realm": "kit-dashboard",
+  "enabled": true,
+  "accessTokenLifespan": 4000,
+  "ssoSessionIdleTimeout": 86400,
+  "ssoSessionMaxLifespan": 2147483647,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator role to edit the global dashboard"
+      }
+    ]
+  },
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "id": "8d6287f2-ba2c-4da1-b88f-0cb70ac807b4",
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255},\"username-prohibited-characters\":{},\"up-username-not-idn-homograph\":{}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"email\",\"displayName\":\"${email}\",\"validations\":{\"email\":{},\"length\":{\"max\":255}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"validations\":{\"length\":{\"max\":255},\"person-name-prohibited-characters\":{}},\"annotations\":{},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]},\"multivalued\":false}],\"groups\":[{\"name\":\"user-metadata\",\"displayHeader\":\"User metadata\",\"displayDescription\":\"Attributes, which refer to user metadata\"}]}"
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "${SPRING_CLIENT_ID}",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "redirectUris": ["${REDIRECT_URI_1}", "${REDIRECT_URI_2}"],
+      "webOrigins": ["${WEB_ORIGIN}"],
+      "publicClient": false,
+      "secret": "${SPRING_CLIENT_SECRET}",
+      "authorizationServicesEnabled": true,
+      "standardFlowEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "spring-client-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "${SPRING_CLIENT_ID}",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "aud"
+          }
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": true,
+      "updateProfileFirstLoginMode": "off",
+      "trustEmail": true,
+      "authenticateByDefault": false,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${AUTH_GOOGLE_ID}",
+        "clientSecret": "${AUTH_GOOGLE_SECRET}",
+        "authorizationUrl": "https://accounts.google.com/o/oauth2/auth",
+        "tokenUrl": "https://oauth2.googleapis.com/token",
+        "userInfoUrl": "https://www.googleapis.com/oauth2/v3/userinfo",
+        "defaultScope": "email profile openid"
+      }
+    },
+    {
+      "alias": "kit",
+      "internalId": "kit",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": true,
+      "storeToken": false,
+      "addReadTokenRoleOnCreate": false,
+      "authenticateByDefault": true,
+      "linkOnly": false,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "${AUTH_KIT_ID}",
+        "clientSecret": "${AUTH_KIT_SECRET}",
+        "issuer": "${AUTH_KIT_ISSUER_LINK}",
+        "authorizationUrl": "${AUTH_KIT_ISSUER_LINK}/protocol/openid-connect/auth",
+        "tokenUrl": "${AUTH_KIT_ISSUER_LINK}/protocol/openid-connect/token",
+        "userInfoUrl": "${AUTH_KIT_ISSUER_LINK}/protocol/openid-connect/userinfo",
+        "useJwksUrl": "true",
+        "jwksUrl": "${AUTH_KIT_ISSUER_LINK}/protocol/openid-connect/certs",
+        "validateSignature": "true",
+        "backchannelSupported": "true",
+        "defaultScope": "openid profile email",
+        "prompt": "login"
+      }
+    }
+  ]
+}
