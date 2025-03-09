@@ -1,6 +1,6 @@
 package net.justonedev.lwdiebbackend.configuration;
 
-import de.dieb.dashboard.backend.websockets.SocketSessionHandler;
+import net.justonedev.lwdiebbackend.websockets.SocketSessionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketSession;

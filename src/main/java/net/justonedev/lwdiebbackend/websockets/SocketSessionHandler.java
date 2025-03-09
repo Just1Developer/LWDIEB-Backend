@@ -1,11 +1,10 @@
 package net.justonedev.lwdiebbackend.websockets;
 
-import de.dieb.dashboard.backend.auth.AppUserAuthenticationToken;
-import de.dieb.dashboard.backend.model.entities.auth.Theme;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.ui.context.Theme;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -86,10 +85,12 @@ public class SocketSessionHandler extends TextWebSocketHandler {
         userSockets.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(session);
 
         if (uuid != DEFAULT_UUID) {
+            session.getPrincipal();
+            /*
             var user = ((AppUserAuthenticationToken) session.getPrincipal());
             if (user != null && !user.getPrincipal().hasCustomizedDashboard()) {
                 defaultViewerUserSockets.add(session);
-            }
+            }*/
         }
         if (userSockets.containsKey(uuid)) {
             log.info("User {} has {} sessions", uuid, userSockets.get(uuid).size());
@@ -249,11 +250,12 @@ public class SocketSessionHandler extends TextWebSocketHandler {
      * @return The UUID of the User of this session.
      */
     @NonNull private static UUID getUuid(@NonNull WebSocketSession session) {
-        AppUserAuthenticationToken token = (AppUserAuthenticationToken) session.getPrincipal();
+        /*AppUserAuthenticationToken token = (AppUserAuthenticationToken) session.getPrincipal();
         if (token == null || token.getPrincipal() == null) {
             return DEFAULT_UUID;
         }
-        return token.getPrincipal().getId();
+        return token.getPrincipal().getId();*/
+        return DEFAULT_UUID;
     }
 
     public void sendSettingsUpdated(UUID userUuid) {
