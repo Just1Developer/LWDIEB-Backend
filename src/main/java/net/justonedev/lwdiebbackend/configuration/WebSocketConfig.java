@@ -5,6 +5,7 @@ import net.justonedev.lwdiebbackend.websockets.SocketSessionHandler;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
@@ -12,7 +13,6 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -25,7 +25,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 	@Value("dashboard.variable.frontend-url")
 	private String frontendUrl;
 
-	private final Map<UUID, Set<WebSocketSession>> userSockets = new ConcurrentHashMap<>();
+	private final Map<String, Set<WebSocketSession>> userSockets = new ConcurrentHashMap<>();
 
 	/**
 	 * Creates a handler to manage WebSocket sessions.

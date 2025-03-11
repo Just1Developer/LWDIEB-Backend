@@ -31,6 +31,8 @@ public class SecurityConfig {
                                 authorize
                                         .requestMatchers("/ws")
                                         .permitAll()
+                                        .requestMatchers("/ws-post")
+                                        .permitAll()
                 );
 
         return http.build();

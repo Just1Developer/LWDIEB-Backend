@@ -5,6 +5,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.ui.context.Theme;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,8 +28,11 @@ import java.util.concurrent.ConcurrentHashMap;
 @EnableScheduling
 public class SocketSessionHandler extends TextWebSocketHandler {
 
-    private static final UUID DEFAULT_UUID =
-            UUID.fromString("00000000-0000-0000-0000-000000000000");
+    private static final String DEFAULT_UUID = "00000000-0000-0000-0000-000000000000";
+
+    public static boolean isDefaultString(String uuid) {
+        return uuid != null && uuid.replace("0", "").equals("----");
+    }
 
     /**
      * The pairs of:<br/>
@@ -52,12 +55,12 @@ public class SocketSessionHandler extends TextWebSocketHandler {
      *     user.
      * </p>
      */
-    private final Map<UUID, Set<WebSocketSession>> userSockets;
+    private final Map<String, Set<WebSocketSession>> userSockets;
 
     /**
      * A separate set for sockets from users who are logged in but do not yet have their own dashboard.
-     * They should still be grouped with their regular UUID for updates in theme and dashboard, but
-     * they should also receive update messages for the default UUID when showing the default dashboard.
+     * They should still be grouped with their regular String for updates in theme and dashboard, but
+     * they should also receive update messages for the default String when showing the default dashboard.
      */
     private final Set<WebSocketSession> defaultViewerUserSockets;
 
@@ -67,7 +70,7 @@ public class SocketSessionHandler extends TextWebSocketHandler {
      * or have multiple handlers with the same storage.
      * @param userSockets The user socket map. Stored as a reference.
      */
-    public SocketSessionHandler(Map<UUID, Set<WebSocketSession>> userSockets) {
+    public SocketSessionHandler(Map<String, Set<WebSocketSession>> userSockets) {
         this.userSockets = userSockets;
         this.defaultViewerUserSockets = new HashSet<>();
         log.info("SocketSessionHandler initialized");
@@ -80,7 +83,7 @@ public class SocketSessionHandler extends TextWebSocketHandler {
      */
     @Override
     public void afterConnectionEstablished(@NonNull WebSocketSession session) {
-        UUID uuid = getUuid(session);
+        String uuid = getUuid(session);
         // Store session
         userSockets.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(session);
 
@@ -110,7 +113,7 @@ public class SocketSessionHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(
             @NonNull WebSocketSession session, @NonNull CloseStatus status) throws IOException {
-        UUID userUuid = getUuid(session);
+        String userUuid = getUuid(session);
         defaultViewerUserSockets.remove(session);
         if (!userSockets.containsKey(userUuid)) {
             for (Set<WebSocketSession> sessions : userSockets.values()) {
@@ -130,27 +133,27 @@ public class SocketSessionHandler extends TextWebSocketHandler {
 
     /**
      * Sends the command to refresh the page to all Sessions connected under
-     * the given UUID.
-     * @param userUuid The UUID.
+     * the given String.
+     * @param userUuid The String.
      */
-    public void sendRefreshMessage(UUID userUuid) {
+    public void sendRefreshMessage(String userUuid) {
         sendSocketMessage(userUuid, formatCommand("refreshDashboard"));
     }
 
     private final HashMap<String, Timer> messageBuffer = new HashMap<>();
 
     /**
-     * Sends a message to all Sessions connected under the given UUID after a specified timeout and
-     * stores it using the combination of UUID and key. If a new message comes for the same combination
-     * of UUID and key within the specified time, the old message will not be sent and a new timer will
+     * Sends a message to all Sessions connected under the given String after a specified timeout and
+     * stores it using the combination of String and key. If a new message comes for the same combination
+     * of String and key within the specified time, the old message will not be sent and a new timer will
      * start, which will send the message after the specified time.
      *
-     * @param userUuid The UUID to send the message to.
+     * @param userUuid The String to send the message to.
      * @param key The buffer key.
      * @param message The message to send.
      * @param timeout The timeout.
      */
-    public void sendSocketMessageBuffered(UUID userUuid, String key, String message, int timeout) {
+    public void sendSocketMessageBuffered(String userUuid, String key, String message, int timeout) {
         String pair = "%s.%s".formatted(userUuid, key);
         Timer oldTimer = messageBuffer.get(pair);
         if (oldTimer != null) {
@@ -171,11 +174,11 @@ public class SocketSessionHandler extends TextWebSocketHandler {
 
     /**
      * Sends a message to all Sessions connected under
-     * the given UUID.
-     * @param userUuid The UUID.
+     * the given String.
+     * @param userUuid The String.
      * @param message The message to send.
      */
-    public void sendSocketMessage(UUID userUuid, String message) {
+    public void sendSocketMessage(String userUuid, String message) {
         Set<WebSocketSession> sessions = userSockets.get(userUuid);
 
         if (userUuid.equals(DEFAULT_UUID)) {
@@ -202,7 +205,7 @@ public class SocketSessionHandler extends TextWebSocketHandler {
                 remove.add(s);
                 continue;
             }
-            UUID uuid = getUuid(s);
+            String uuid = getUuid(s);
             if (!uuid.equals(userUuid)) continue;
             sendSingleSocketMessage(s, message);
         }
@@ -245,11 +248,11 @@ public class SocketSessionHandler extends TextWebSocketHandler {
     }
 
     /**
-     * Extracts the UUID from the given Session. If there is no identification, returns the default UUID.
+     * Extracts the String from the given Session. If there is no identification, returns the default String.
      * @param session The WebSocketSession
-     * @return The UUID of the User of this session.
+     * @return The String of the User of this session.
      */
-    @NonNull private static UUID getUuid(@NonNull WebSocketSession session) {
+    @NonNull private static String getUuid(@NonNull WebSocketSession session) {
         /*AppUserAuthenticationToken token = (AppUserAuthenticationToken) session.getPrincipal();
         if (token == null || token.getPrincipal() == null) {
             return DEFAULT_UUID;
@@ -258,11 +261,11 @@ public class SocketSessionHandler extends TextWebSocketHandler {
         return DEFAULT_UUID;
     }
 
-    public void sendSettingsUpdated(UUID userUuid) {
+    public void sendSettingsUpdated(String userUuid) {
         sendSocketMessage(userUuid, formatCommand("refreshSettings"));
     }
 
-    public void sendThemeSelected(UUID userUUid, Theme theme) {
+    public void sendThemeSelected(String userUUid, Theme theme) {
         sendSocketMessageBuffered(
                 userUUid, "theme", formatPair("selectedTheme", theme.toString()), 2500);
     }
